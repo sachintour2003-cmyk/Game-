@@ -37,3 +37,52 @@ document.addEventListener('keydown', function(e) {
         return false;
     }
 });
+
+// --- DARK / LIGHT MODE TOGGLE ---
+(function () {
+    var KEY = 'appTheme';
+    function getSaved() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+    function save(t) { try { localStorage.setItem(KEY, t); } catch (e) {} }
+
+    // Default: dark (change 'dark' to 'light' for default bright)
+    var theme = getSaved() || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+
+    function label(btn) {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        btn.innerHTML = dark
+            ? '<i class="fa-solid fa-sun"></i> Bright Mode'
+            : '<i class="fa-solid fa-moon"></i> Dark Mode';
+        btn.title = dark ? 'Switch to Bright mode' : 'Switch to Dark mode';
+    }
+
+    function toggle(btn) {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        save(next);
+        label(btn);
+    }
+
+    function init() {
+        if (document.getElementById('themeToggleBtn')) return;
+        var btn = document.createElement('button');
+        btn.id = 'themeToggleBtn';
+        btn.type = 'button';
+        btn.className = 'theme-toggle';
+        var host = document.querySelector('.header-actions');
+        if (host) {
+            host.insertBefore(btn, host.firstChild);
+        } else {
+            btn.classList.add('floating');
+            document.body.appendChild(btn);
+        }
+        label(btn);
+        btn.addEventListener('click', function () { toggle(btn); });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
