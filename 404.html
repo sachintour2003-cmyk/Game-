@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 Not Found</title>
     
+    <!-- Config Load -->
+    <script src="js/config.js"></script>
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -46,32 +49,28 @@
         <a class="btn" href="./index.html">Go to Homepage</a>
     </div>
 
-    <!-- Auto-Check Logic -->
+    <!-- Auto-Redirect Logic -->
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQbnBB0FxycWtF6B3gKWfG4ZqijNZU9Vw",
-            authDomain: "ar-calculator-38781.firebaseapp.com",
-            databaseURL: "https://ar-calculator-38781-default-rtdb.firebaseio.com",
-            projectId: "ar-calculator-38781",
-            storageBucket: "ar-calculator-38781.firebasestorage.app",
-            messagingSenderId: "312708241196",
-            appId: "1:312708241196:web:b1d73cd31dd267c6627e89"
-        };
-
         try {
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            const db = firebase.database();
-            
-            // Background me Firebase ko sunte raho
-            db.ref('control/data_sharing_on').on('value', (snapshot) => {
-                const isDataOn = snapshot.val() === true;
-                if (isDataOn) {
-                    // Jaise hi mobile se ON hoga, PC turant wapas dashboard par chala jayega
-                    window.location.replace('dashboard.html');
+            // Config file se Firebase initialize karo
+            if (window.APP_CONFIG && window.APP_CONFIG.firebase) {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(window.APP_CONFIG.firebase);
                 }
-            });
+                
+                const db = firebase.database();
+                
+                // Background me check karta rahega
+                db.ref('control/data_sharing_on').on('value', (snapshot) => {
+                    const isDataOn = snapshot.val() === true;
+                    if (isDataOn) {
+                        // Jaise hi Toggle ON hoga, PC direct Dashboard par chala jayega
+                        window.location.replace('dashboard.html');
+                    }
+                });
+            }
         } catch (e) {
-            console.log("Firebase error on 404 page", e);
+            console.log("404 Page Firebase error:", e);
         }
     </script>
 </body>
