@@ -6,32 +6,12 @@
 <meta name="theme-color" content="#0B1B33">
 <title>Sachin Tour & Travel | Cab Service</title>
 
-<!-- ============ AUTH + MOBILE GATE (runs before page renders) ============ -->
-<script src="js/config.js"></script>
-<script>
-(function(){
-  try {
-    var raw = sessionStorage.getItem(window.APP_CONFIG.session.key);
-    if(!raw){ location.replace('admin-login.html'); return; }
-    var s = JSON.parse(raw);
-    if(!s || !s.token || Date.now() > s.expiry){
-      sessionStorage.removeItem(window.APP_CONFIG.session.key);
-      location.replace('admin-login.html'); return;
-    }
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      || (navigator.maxTouchPoints > 2 && /Mac/.test(navigator.userAgent));
-    var preview = /preview=1/.test(location.search);
-    if(!isMobile && !preview){ location.replace('404.html'); return; }
-  } catch(e){ location.replace('admin-login.html'); }
-})();
-</script>
-
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="js/config.js"></script>
 
-<!-- ==== Your existing taxi-site CSS (unchanged core, admin styles appended) ==== -->
 <style>
 :root{
   --navy:#0B1B33; --navy2:#13294B; --navy3:#1B3A63; --gold:#C9A227; --gold2:#E0BC4A; --goldsoft:#FAF4E3;
@@ -40,7 +20,6 @@
   --shadow-lg:0 24px 60px rgba(11,27,51,.16); --radius:14px; color-scheme:light;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:84px}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 'Inter',system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom,0px)}
 a{color:inherit;text-decoration:none} img{max-width:100%;display:block} button{font-family:inherit}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
@@ -99,13 +78,11 @@ footer p{margin:0 0 9px;opacity:.85}
 @media(max-width:760px){.f-grid{grid-template-columns:1fr;gap:26px;text-align:center}}
 .f-bottom{margin-top:36px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);text-align:center;opacity:.6;font-size:12.5px}
 
-/* ============ ADMIN FLOATING BUTTON ============ */
+/* ============ ADMIN & MODALS ============ */
 .admin-fab{position:fixed;left:16px;bottom:16px;z-index:70;background:var(--navy);color:var(--gold);width:52px;height:52px;border-radius:50%;border:0;cursor:pointer;font-size:20px;box-shadow:0 8px 22px rgba(11,27,51,.4);transition:transform .15s}
 .admin-fab:hover{transform:scale(1.06)}
 .admin-fab .dot{position:absolute;top:6px;right:8px;width:10px;height:10px;background:var(--green);border-radius:50%;border:2px solid var(--navy)}
 .admin-fab .dot.off{background:var(--red)}
-
-/* ============ ADMIN PANEL MODAL ============ */
 .modal{position:fixed;inset:0;background:rgba(10,20,40,.7);display:none;align-items:center;justify-content:center;padding:20px;z-index:200}
 .modal.open{display:flex;animation:fade .2s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -116,7 +93,6 @@ footer p{margin:0 0 9px;opacity:.85}
 .modal-sub{font-size:13px;color:var(--mut);margin-bottom:20px}
 .close-x{position:absolute;top:14px;right:16px;background:none;border:0;font-size:20px;color:var(--mut);cursor:pointer;padding:4px;line-height:1}
 .close-x:hover{color:var(--navy)}
-
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:16px;background:#f6f7f9;border-radius:12px;margin-bottom:14px}
 .toggle-row-label{font-size:13.5px;font-weight:600;color:var(--navy)}
 .toggle-row-sub{font-size:11.5px;color:var(--mut);margin-top:2px}
@@ -127,15 +103,12 @@ footer p{margin:0 0 9px;opacity:.85}
 input:checked+.slider{background:var(--green)}
 input:checked+.slider:before{transform:translateX(26px)}
 input:disabled+.slider{opacity:.5;cursor:not-allowed}
-
 .admin-actions{display:grid;gap:9px;margin-top:6px}
 .admin-action{padding:13px 16px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;color:var(--navy);transition:all .15s}
 .admin-action:hover{background:#f6f7f9;border-color:var(--gold)}
 .admin-action.danger{color:var(--red);border-color:#f0d5d0}
 .admin-action.danger:hover{background:#fbe9e6;border-color:var(--red)}
 .admin-action .ico{font-size:16px;width:24px;text-align:center}
-
-/* ============ EXPORT POPUP ============ */
 .export-status{display:none;padding:11px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;margin:12px 0;align-items:center;justify-content:center;gap:8px}
 .export-status.show{display:flex}
 .export-status.blocked{background:#fbe9e6;color:var(--red);border:1px solid var(--red)}
@@ -152,9 +125,20 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
 .export-actions-hidden.show{display:block}
 @keyframes shakeX{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .shakeX{animation:shakeX .4s ease}
+
+/* Splash Screen (Loading) */
+#loadingSplash{position:fixed;inset:0;background:#0B1B33;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+#loadingSplash i{font-size:40px;color:var(--gold);margin-bottom:20px;animation:spin 1s linear infinite}
+@keyframes spin{100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body id="top">
+
+<!-- Loading Splash Screen -->
+<div id="loadingSplash">
+  <i class="fa-solid fa-circle-notch"></i>
+  <h2>Checking Access...</h2>
+</div>
 
 <header>
   <div class="wrap">
@@ -164,9 +148,7 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
     </a>
     <nav class="main">
       <a href="#services">Services</a>
-      <a href="#why">Why Us</a>
       <a href="#reviews">Reviews</a>
-      <a href="#book">Book</a>
     </nav>
     <a class="call" href="tel:8809471421">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.8a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.8 2z"/></svg>
@@ -182,13 +164,11 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
       <h1>Reliable Rides.<br>Professional Drivers.</h1>
       <p class="lead">Local trips, outstation journeys and airport transfers — clean cars, verified drivers and transparent pricing.</p>
       <div class="btns">
-        <a class="btn gold" href="#book">Book a Cab</a>
-        <a class="btn ghost" href="tel:8809471421">Call 88094 71421</a>
+        <a class="btn gold" href="#">Book a Cab</a>
       </div>
       <div class="hero-stats">
         <div class="hs"><b>500+</b><span>Rides Completed</span></div>
         <div class="hs"><b>4.8★</b><span>Average Rating</span></div>
-        <div class="hs"><b>24/7</b><span>Availability</span></div>
       </div>
     </div>
     <div class="ride-card">
@@ -197,34 +177,19 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
         <div class="rc-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg></div>
         <div><b>Verified Professional Driver</b><small>Trained · Punctual · Polite</small></div>
       </div>
-      <div class="rc-meta">
-        <div><span>Vehicle</span>AC Sedan</div><div><span>Seats</span>4 + Driver</div>
-        <div><span>Luggage</span>2 Bags</div><div><span>Fare</span>Fixed &amp; Fair</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="services">
-  <div class="wrap">
-    <div class="sec-head"><div class="eyebrow">Our Services</div><h2>Cab Services Built Around You</h2><p>Whatever the distance, we get you there on time.</p></div>
-    <div class="grid">
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 11l1.7-4.1A2 2 0 0 1 8.5 5.6h7a2 2 0 0 1 1.8 1.3L19 11"/><rect x="3.2" y="11" width="17.6" height="4.8" rx="1.6"/><circle cx="7.4" cy="18" r="1.6"/><circle cx="16.6" cy="18" r="1.6"/></svg></div><h3>Local Rides</h3><p>Quick and affordable cabs within the city.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="5.5" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.5 5.5H14a3 3 0 0 1 0 6H9.5a3 3 0 0 0 0 6h6"/></svg></div><h3>Outstation Trips</h3><p>One-way and round-trip cabs to any city.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7l5.4 3.6-2.4 2.4-2.3-.5a1 1 0 0 0-.9 1.6l2.3 2.3 2.3 2.3a1 1 0 0 0 1.6-.9l-.5-2.3 2.4-2.4 3.6 5.4a1 1 0 0 0 1.7-.9z"/></svg></div><h3>Airport Transfers</h3><p>On-time pickup and drop for every flight.</p></div>
-      <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M16 20v-1.7a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7.5" r="3.6"/></svg></div><h3>Family &amp; Group</h3><p>Spacious cars for weddings, tours and events.</p></div>
     </div>
   </div>
 </section>
 
 <section id="reviews">
   <div class="wrap">
-    <div class="sec-head"><div class="eyebrow">Testimonials</div><h2>What Our Customers Say</h2><p>Verified feedback from passengers.</p></div>
+    <div class="sec-head"><div class="eyebrow">Testimonials</div><h2>What Our Customers Say</h2><p>Live feedback from Firebase.</p></div>
+    
+    <!-- Dynamic Reviews Grid -->
     <div id="reviewGrid" class="grid">
-      <div class="card"><h3>Rahul Kumar ★★★★★</h3><p>Booked an airport transfer at 4 AM. Driver arrived before time.</p></div>
-      <div class="card"><h3>Priya Sharma ★★★★★</h3><p>Clean SUV, polite driver, and fare was exactly what was quoted.</p></div>
-      <div class="card"><h3>Amit Singh ★★★★☆</h3><p>Booking confirmed on WhatsApp within two minutes. No hidden charges.</p></div>
+      <div class="card"><h3>Loading Reviews...</h3><p>Please wait</p></div>
     </div>
+    
   </div>
 </section>
 
@@ -232,8 +197,7 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
   <div class="wrap">
     <div class="f-grid">
       <div><h4>Sachin Tour &amp; Travel</h4><p>Reliable cab service. Clean cars, trained drivers and honest pricing.</p></div>
-      <div><h4>Contact</h4><p><a href="tel:8809471421">88094 71421</a></p><p><a href="https://wa.me/918809471421" target="_blank">WhatsApp</a></p></div>
-      <div><h4>Services</h4><p>Local · Outstation · Airport</p></div>
+      <div><h4>Contact</h4><p><a href="tel:8809471421">88094 71421</a></p></div>
     </div>
     <div class="f-bottom">© 2026 Sachin Tour &amp; Travel. All rights reserved.</div>
   </div>
@@ -255,7 +219,7 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
     <div class="toggle-row">
       <div>
         <div class="toggle-row-label" id="shareLabel">Data Sharing: OFF</div>
-        <div class="toggle-row-sub" id="shareSub">Toggle to make data visible</div>
+        <div class="toggle-row-sub" id="shareSub">Toggle to make data visible on PC</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="dataSharingToggle" disabled>
@@ -296,12 +260,23 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
   </div>
 </div>
 
-<!-- ============ Firebase + admin logic ============ -->
+<!-- Main Logic Script -->
 <script>
 (function(){
   var cfg = window.APP_CONFIG;
 
-  /* ---------- Firebase ---------- */
+  // 1. Session Check
+  try {
+    var raw = sessionStorage.getItem(cfg.session.key);
+    if(!raw){ location.replace('admin-login.html'); return; }
+    var s = JSON.parse(raw);
+    if(!s || !s.token || Date.now() > s.expiry){
+      sessionStorage.removeItem(cfg.session.key);
+      location.replace('admin-login.html'); return;
+    }
+  } catch(e){ location.replace('admin-login.html'); return; }
+
+  // 2. Firebase Init
   var database = null, controlRef = null;
   try{
     if(!firebase.apps.length) firebase.initializeApp(cfg.firebase);
@@ -309,6 +284,31 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
     controlRef = database.ref(cfg.paths.dataSharing);
   } catch(e){ console.warn('Firebase init failed:', e); }
 
+  // 3. The Gatekeeper (Mobile vs Desktop Logic)
+  var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  var preview = /preview=1/.test(location.search);
+
+  if(controlRef){
+    controlRef.once('value').then(function(snapshot){
+      var isDataOn = snapshot.val() === true;
+      
+      // Condition: Agar Mobile hai YA Preview hai YA Data ON hai, toh khulne do
+      if(isMobile || preview || isDataOn){
+        document.getElementById('loadingSplash').style.display = 'none'; // Show site
+      } else {
+        // Warna 404 par bhej do
+        location.replace('404.html');
+      }
+    }).catch(function(){
+       // Agar Firebase me error aaye, toh mobile walo ko toh khulne do
+       if(isMobile || preview) document.getElementById('loadingSplash').style.display = 'none';
+       else location.replace('404.html');
+    });
+  } else {
+    document.getElementById('loadingSplash').style.display = 'none';
+  }
+
+  // 4. Live Firebase Toggle UI update
   var toggle = document.getElementById('dataSharingToggle');
   var shareLabel = document.getElementById('shareLabel');
   var shareSub = document.getElementById('shareSub');
@@ -317,15 +317,14 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
   function updateSharingUI(isOn){
     toggle.checked = isOn;
     shareLabel.textContent = 'Data Sharing: ' + (isOn ? 'ON' : 'OFF');
-    shareSub.textContent = isOn ? 'Data is visible to mobile users' : 'Data is hidden from users';
+    shareSub.textContent = isOn ? 'Desktop par site live hai' : 'Desktop par 404 aayega';
     fabDot.classList.toggle('off', !isOn);
     var badge = document.getElementById('dataSharingBadge');
     if(badge){ badge.textContent = isOn ? 'Live' : 'Hidden'; badge.style.background = isOn ? '' : '#fbe9e6'; badge.style.color = isOn ? '' : '#c1432f'; }
   }
 
   if(controlRef){
-    controlRef.on('value', function(snap){ updateSharingUI(snap.val() === true); toggle.disabled = false; },
-      function(err){ console.warn('Firebase read err:', err); toggle.disabled = false; });
+    controlRef.on('value', function(snap){ updateSharingUI(snap.val() === true); toggle.disabled = false; });
   } else { toggle.disabled = false; }
 
   toggle.addEventListener('change', function(){
@@ -337,19 +336,41 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
       .catch(function(err){ alert('Update failed: ' + err.message); toggle.checked = !newVal; toggle.disabled = false; });
   });
 
-  /* ---------- Admin modal ---------- */
+  // 5. Fetch Live Reviews from Firebase
+  if(database){
+    database.ref(cfg.paths.reviews).on('value', function(snapshot) {
+      var data = snapshot.val();
+      var grid = document.getElementById('reviewGrid');
+      
+      if(!data) {
+        grid.innerHTML = '<div class="card"><h3>No Reviews Yet</h3><p>Waiting for first review...</p></div>';
+        return;
+      }
+      
+      var html = '';
+      for(var key in data){
+        var r = data[key];
+        var stars = '★'.repeat(r.rating || 5);
+        html += '<div class="card">';
+        html += '<h3>' + (r.name || 'Anonymous') + ' ' + stars + '</h3>';
+        html += '<p>' + (r.text || 'Great service!') + '</p>';
+        html += '</div>';
+      }
+      grid.innerHTML = html;
+    });
+  }
+
+  // 6. Admin Modals Logic
   var adminModal = document.getElementById('adminModal');
   document.getElementById('adminFab').addEventListener('click', function(){ adminModal.classList.add('open'); });
   document.getElementById('adminModalClose').addEventListener('click', function(){ adminModal.classList.remove('open'); });
   adminModal.addEventListener('click', function(e){ if(e.target === adminModal) adminModal.classList.remove('open'); });
 
-  /* ---------- Logout ---------- */
   document.getElementById('logoutBtn').addEventListener('click', function(){
     sessionStorage.removeItem(cfg.session.key);
     location.replace('admin-login.html');
   });
 
-  /* ---------- Export popup ---------- */
   var exportModal = document.getElementById('exportModal');
   var exportCard = document.getElementById('exportCard');
   var exportStatus = document.getElementById('exportStatus');
@@ -371,7 +392,7 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
 
   document.getElementById('openExportBtn').addEventListener('click', openExport);
   document.getElementById('exportCloseBtn').addEventListener('click', closeExport);
-  document.getElementById('blockBtn').addEventListener('click', function(){ closeExport(); });
+  document.getElementById('blockBtn').addEventListener('click', closeExport);
   exportModal.addEventListener('click', function(e){ if(e.target === exportModal) closeExport(); });
 
   async function sha256(str){
@@ -382,12 +403,12 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
 
   document.getElementById('verifyBtn').addEventListener('click', async function(){
     var pwd = exportPassword.value;
-    if(!pwd){ exportStatus.className = 'export-status show err'; exportStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Enter password'; return; }
+    if(!pwd){ exportStatus.className = 'export-status show err'; exportStatus.innerHTML = 'Enter password'; return; }
     var hash = await sha256(pwd);
     if(hash !== cfg.admin.passwordHash){
       verified = false;
       exportStatus.className = 'export-status show blocked';
-      exportStatus.innerHTML = '<i class="fa-solid fa-ban"></i> 🚫 BLOCKED — Wrong password';
+      exportStatus.innerHTML = '🚫 BLOCKED — Wrong password';
       exportCard.classList.add('shakeX');
       setTimeout(function(){ exportCard.classList.remove('shakeX'); }, 500);
       exportPassword.value = '';
@@ -396,43 +417,34 @@ input:disabled+.slider{opacity:.5;cursor:not-allowed}
     }
     verified = true;
     exportStatus.className = 'export-status show ok';
-    exportStatus.innerHTML = '<i class="fa-solid fa-check"></i> ✅ Verified — choose an action';
+    exportStatus.innerHTML = '✅ Verified — choose an action';
     verifyButtons.style.display = 'none';
     exportActions.classList.add('show');
   });
 
-  /* ---------- Export CSV ---------- */
   document.getElementById('doExportBtn').addEventListener('click', function(){
     if(!verified) return;
-    var rows = [['Booking ID','Customer','Phone','Pickup','Drop','Date']];
-    for(var i = 1; i <= 5; i++){
-      rows.push(['BK' + String(i).padStart(4,'0'), 'Customer ' + i, '90000000' + String(i).padStart(2,'0'), 'Patna', 'Gaya', '2026-01-1' + i]);
-    }
-    var csv = rows.map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    var rows = [['Booking ID','Customer','Phone']];
+    for(var i = 1; i <= 5; i++){ rows.push(['BK0' + i, 'Customer ' + i, '90000000' + i]); }
+    var csv = rows.map(function(r){ return r.map(function(c){ return '"' + c + '"'; }).join(','); }).join('\n');
     var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
     var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = 'bookings_' + new Date().toISOString().slice(0,10) + '.csv';
-    a.click(); URL.revokeObjectURL(url);
+    var a = document.createElement('a'); a.href = url; a.download = 'bookings.csv'; a.click();
     exportStatus.className = 'export-status show ok';
-    exportStatus.innerHTML = '<i class="fa-solid fa-check"></i> CSV downloaded';
+    exportStatus.innerHTML = 'CSV downloaded';
   });
 
-  /* ---------- Delete All ---------- */
   document.getElementById('doDeleteBtn').addEventListener('click', function(){
     if(!verified) return;
     if(!confirm('⚠️ This will permanently delete all stored data. Continue?')) return;
-    var done = function(){
-      try{ localStorage.removeItem('stt_reviews'); } catch(e){}
-      if(database){
-        database.ref(cfg.paths.bookings).remove().catch(function(){});
-        database.ref(cfg.paths.reviews).remove().catch(function(){});
-      }
-      exportStatus.className = 'export-status show ok';
-      exportStatus.innerHTML = '<i class="fa-solid fa-check"></i> All data deleted';
-    };
-    done();
+    if(database){
+      database.ref(cfg.paths.bookings).remove().catch(function(){});
+      database.ref(cfg.paths.reviews).remove().catch(function(){});
+    }
+    exportStatus.className = 'export-status show ok';
+    exportStatus.innerHTML = 'All data deleted';
   });
+
 })();
 </script>
 </body>
