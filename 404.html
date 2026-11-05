@@ -5,29 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 Not Found</title>
     
-    <!-- ================= SECURITY SCRIPT (Ctrl+U Block) ================= -->
+    <!-- Security -->
     <script>
         function blockKeys(e) {
-            if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S')) {
-                e.preventDefault();
-                return false;
-            }
-            if (e.key === 'F12' || e.keyCode === 123) {
-                e.preventDefault();
-                return false;
-            }
-            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
-                e.preventDefault();
-                return false;
-            }
+            if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S')) { e.preventDefault(); return false; }
+            if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) { e.preventDefault(); return false; }
         }
     </script>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase & Config -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
-    <!-- Config File -->
     <script src="js/config.js"></script>
 
     <style>
@@ -51,9 +40,7 @@
     <div class="wrap">
         <div class="icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="8" y1="8" x2="16" y2="16"/>
-                <line x1="16" y1="8" x2="8" y2="16"/>
+                <circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>
             </svg>
         </div>
         <h1>This page isn’t working</h1>
@@ -67,29 +54,19 @@
         <a class="btn" href="./index.html">Go to Homepage</a>
     </div>
 
-    <!-- ================= AUTO-REDIRECT LOGIC ================= -->
+    <!-- Auto-Redirect Logic -->
     <script>
         try {
             if (window.APP_CONFIG && window.APP_CONFIG.firebase) {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(window.APP_CONFIG.firebase);
-                }
-                
+                if (!firebase.apps.length) firebase.initializeApp(window.APP_CONFIG.firebase);
                 const db = firebase.database();
-                
-                // Background me Firebase ko sunte raho
                 db.ref('control/data_sharing_on').on('value', (snapshot) => {
-                    const isDataOn = snapshot.val() === true;
-                    
-                    // Jaise hi mobile se ON hoga, PC turant Dashboard par chala jayega
-                    if (isDataOn) {
+                    if (snapshot.val() === true) {
                         window.location.replace('dashboard.html');
                     }
                 });
             }
-        } catch (e) {
-            console.log("404 Page Firebase error:", e);
-        }
+        } catch (e) { console.log("404 Firebase error:", e); }
     </script>
 </body>
 </html>
