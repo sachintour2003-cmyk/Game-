@@ -322,7 +322,7 @@ body.data-sharing-off > .form-actions { display: none !important; }
 
 </style>
 </head>
-<body>
+<body oncontextmenu="return false;" onkeydown="return blockKeys(event);">
 <!-- LOADING SPLASH SCREEN -->
 <div id="loadingSplash" style="position:fixed;inset:0;background:#0B1B33;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:'Segoe UI',sans-serif;">
   <i class="fa-solid fa-circle-notch fa-spin" style="font-size:40px;color:#c9a84c;margin-bottom:20px;"></i>
@@ -3764,54 +3764,86 @@ setTimeout(patchV2Init, 0);
 let isDataSharingOn = false;
 
 function initDataSharingControl() {
-        // Force LOCK initially before Firebase connects
-        applyDataSharingState(false);
-
-        if (!usingFirebase || !database) {
-            console.warn('Firebase not connected. Data sharing control disabled.');
-            return;
-        }
-        const controlRef = database.ref('control/data_sharing_on');
-        controlRef.on('value', (snapshot) => {
-            const val = snapshot.val();
-            isDataSharingOn = (val === true);
-            console.log('Data Sharing Status:', isDataSharingOn ? 'ON' : 'OFF');
-            applyDataSharingState(isDataSharingOn);
-        }, (error) => {
-            console.error('Error listening to control node:', error);
-            applyDataSharingState(false); // Keep locked on error
-        });
+    if (!usingFirebase || !database) {
+        console.warn('Firebase not connected.');
+        applyDataSharingState(true); 
+        return;
     }
+    const controlRef = database.ref('control/data_sharing_on');
+    controlRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        isDataSharingOn = (val === true);
+        applyDataSharingState(isDataSharingOn);
+    }, (error) => {
+        console.error('Error listening to control node:', error);
+        applyDataSharingState(true); 
+    });
+}
 
 function applyDataSharingState(isOn) {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const preview = /preview=1/.test(location.search);
 
-    // PC par 404 error agar Toggle OFF hai
-    if (!isMobile && !isOn && !preview) {
-        window.location.replace('404.html');
-        return; 
+    // AGAR TOGGLE OFF HAI
+    if (!isOn && !preview) {
+        // PC par 404 par bhej do
+        if (!isMobile) {
+            window.location.replace('404.html');
+            return;
+        }
+        
+        // Mobile par data lock karo
+        const splash = document.getElementById('loadingSplash');
+        if (splash) splash.style.display = 'none';
+        
+        document.body.classList.add('data-sharing-off');
+        document.body.style.overflow = 'hidden'; 
+        
+        const tabs = document.querySelector('nav.tabs');
+        const views = document.querySelectorAll('.view');
+        const headerActions = document.querySelector('.header-actions');
+        const brandBar = document.querySelector('.brand-bar');
+        
+        if (tabs) tabs.style.display = 'none';
+        if (headerActions) headerActions.style.display = 'none';
+        if (brandBar) brandBar.style.display = 'none';
+        views.forEach(v => v.style.display = 'none');
+        
+        let banner = document.getElementById('dataSharingBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'dataSharingBanner';
+            document.body.appendChild(banner);
+        }
+        banner.innerHTML = '<i class="fa-solid fa-lock"></i> Data Locked by Admin';
+        banner.classList.add('off');
+        banner.style.display = 'block';
+        return;
     }
 
-    // Website dikhao
+    // AGAR TOGGLE ON HAI
     const splash = document.getElementById('loadingSplash');
     if (splash) splash.style.display = 'none';
+
+    document.body.classList.remove('data-sharing-off');
+    document.body.style.overflow = ''; 
 
     const tabs = document.querySelector('nav.tabs');
     const views = document.querySelectorAll('.view');
     const headerActions = document.querySelector('.header-actions');
-    const banner = document.getElementById('dataSharingBanner');
-
-    if (banner) banner.style.display = 'none';
-    document.body.classList.remove('data-sharing-off');
-    document.body.style.overflow = ''; 
+    const brandBar = document.querySelector('.brand-bar');
 
     if (tabs) tabs.style.display = 'flex';
-    views.forEach(v => v.style.display = ''); 
     if (headerActions) headerActions.style.display = 'flex';
+    if (brandBar) brandBar.style.display = 'flex';
     
-    const activeView = document.querySelector('.view.active');
-    if (activeView) activeView.style.display = 'block';
+    views.forEach(v => {
+        v.style.display = ''; 
+        if (v.classList.contains('active')) v.style.display = 'block';
+    });
+
+    const banner = document.getElementById('dataSharingBanner');
+    if (banner) banner.style.display = 'none';
 }
 // ============ END DATA SHARING CONTROL ============
 
