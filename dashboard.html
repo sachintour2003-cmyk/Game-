@@ -3,186 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Tool - Patcher (V4 Final)</title>
+    <title>Admin Control Panel - Data Sharing</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: #0a1e3d; color: #fff; padding: 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .header p { margin: 5px 0 0; color: #c9a84c; font-size: 14px; }
-        .content { display: flex; gap: 20px; padding: 20px; }
-        .panel { flex: 1; display: flex; flex-direction: column; }
-        .panel label { font-weight: bold; margin-bottom: 8px; color: #333; }
-        textarea { width: 100%; height: 500px; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 13px; resize: vertical; background: #fafafa; }
-        .actions { text-align: center; margin-top: 20px; }
-        button { background: #c9a84c; color: #0a1e3d; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        button:hover { background: #d9bb63; transform: translateY(-2px); }
-        button:active { transform: translateY(0); }
-        .success-msg { color: #1f8a55; font-weight: bold; margin-top: 10px; display: none; text-align: center; }
-        .note { background: #faf1de; border-left: 4px solid #c9a84c; padding: 10px; margin-bottom: 15px; font-size: 13px; color: #555; }
+        :root {
+            --ink: #0a1e3d;
+            --gold: #c9a84c;
+            --green: #1f8a55;
+            --green-bg: #e4f5ec;
+            --red: #c1432f;
+            --red-bg: #fbe9e6;
+            --paper: #f3f5f8;
+            --card: #ffffff;
+            --line: #e1e5ec;
+            --text: #18233a;
+            --text-mute: #5b6b85;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a1e3d 0%, #16305a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .control-card {
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 6px;
+            background: var(--gold);
+        }
+
+        .header-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--paper);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            color: var(--ink);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-size: 22px;
+            color: var(--ink);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            font-size: 13.5px;
+            color: var(--text-mute);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* Toggle Switch Styles */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--paper);
+            border-radius: 16px;
+            border: 1px solid var(--line);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 90px;
+            height: 46px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 46px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 38px;
+            width: 38px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        input:checked + .slider {
+            background-color: var(--green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(44px);
+        }
+
+        input:disabled + .slider {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .switch-label {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-mute);
+            transition: color 0.3s ease;
+            width: 70px;
+            text-align: left;
+        }
+
+        .switch-label.on { color: var(--green); }
+        .switch-label.off { color: var(--red); }
+
+        /* Status Box */
+        .status-box {
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .status-box.on {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .status-box.off {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .status-box.loading {
+            background: var(--paper);
+            color: var(--text-mute);
+            border: 1px solid var(--line);
+        }
+
+        .warning-text {
+            font-size: 11.5px;
+            color: var(--text-mute);
+            margin-top: 20px;
+            line-height: 1.5;
+            padding-top: 20px;
+            border-top: 1px dashed var(--line);
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>AR Tool - Patcher (V4 Final)</h1>
-        <p>Date Fix + Export Password + Mobile Data Sharing Lock (Strict)</p>
-    </div>
-    <div class="content">
-        <div class="panel">
-            <div class="note">
-                👇 <strong>Step 1:</strong> Apna purana (Old) HTML code yaha paste karein.
-            </div>
-            <label>Old Code (Paste Here)</label>
-            <textarea id="oldCode" placeholder="<!DOCTYPE html> ..."></textarea>
+    <div class="control-card">
+        <!-- Header Icon -->
+        <div class="header-icon" id="headerIcon">
+            <i class="fa-solid fa-shield-halved"></i>
         </div>
-        <div class="panel">
-            <div class="note">
-                👇 <strong>Step 2:</strong> Patch button dabayein aur naya code copy karein.
-            </div>
-            <label>New Code (Output)</label>
-            <textarea id="newCode" readonly placeholder="New patched code will appear here..."></textarea>
+
+        <h1>Control YourSelf</h1>
+        <p class="subtitle">Hello Toggle</p>
+
+        <!-- Toggle Switch -->
+        <div class="switch-container">
+            <span class="switch-label off" id="labelStatus">OFF</span>
+            <label class="switch">
+                <input type="checkbox" id="sharingToggle" disabled>
+                <span class="slider"></span>
+            </label>
         </div>
+
+        <!-- Status Box -->
+        <div class="status-box loading" id="statusBox">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Connecting to Firebase...</span>
+        </div>
+
+        <p class="warning-text">
+            <i class="fa-solid fa-circle-info"></i> 
+            Karma.
+        </p>
     </div>
-    <div class="actions">
-        <button onclick="applyPatch()">🚀 Patch Code Now</button>
-        <div class="success-msg" id="successMsg">✅ Code Patched Successfully! Copy the New Code.</div>
-    </div>
-</div>
 
-<script>
-function applyPatch() {
-    let code = document.getElementById('oldCode').value;
-    if (!code || code.trim().length < 100) {
-        alert("Please paste the original HTML code first!");
-        return;
-    }
+    <script>
+        // Aapki Website ka Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQbnBB0FxycWtF6B3gKWfG4ZqijNZU9Vw",
+            authDomain: "ar-calculator-38781.firebaseapp.com",
+            databaseURL: "https://ar-calculator-38781-default-rtdb.firebaseio.com",
+            projectId: "ar-calculator-38781",
+            storageBucket: "ar-calculator-38781.firebasestorage.app",
+            messagingSenderId: "312708241196",
+            appId: "1:312708241196:web:b1d73cd31dd267c6627e89"
+        };
 
-    let changes = 0;
+        // DOM Elements
+        const toggle = document.getElementById('sharingToggle');
+        const labelStatus = document.getElementById('labelStatus');
+        const statusBox = document.getElementById('statusBox');
+        const headerIcon = document.getElementById('headerIcon');
 
-    // 1. Date Fix
-    if (!code.includes('function addMonthsAnchored')) {
-        const oldAddMonths = `function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }`;
-        const newAddMonths = `function addMonths(date, n) { const d = new Date(date); d.setMonth(d.getMonth() + n); return d; }\n\nfunction addMonthsAnchored(baseDate, n) {\n    const d = new Date(baseDate);\n    const targetMonth = d.getMonth() + n;\n    const targetYear = d.getFullYear() + Math.floor(targetMonth / 12);\n    const normalizedMonth = (targetMonth % 12 + 12) % 12;\n    const originalDay = d.getDate();\n    const daysInTargetMonth = new Date(targetYear, normalizedMonth + 1, 0).getDate();\n    const targetDay = Math.min(originalDay, daysInTargetMonth);\n    return new Date(targetYear, normalizedMonth, targetDay);\n}`;
-        if (code.includes(oldAddMonths)) {
-            code = code.replace(oldAddMonths, newAddMonths);
-            changes++;
-        }
-    }
+        let database = null;
+        let controlRef = null;
 
-    const regexAuto = /for\s*\(\s*let\s+i\s*=\s*0;\s*i\s*<\s*chequeCount;\s*i\+\+\s*\)\s*\{\s*const\s+monthTo\s*=\s*addDays\(addMonths\(monthFrom,\s*1\),\s*-1\);/g;
-    if (regexAuto.test(code)) {
-        code = code.replace(regexAuto, "for (let i = 0; i < chequeCount; i++) {\n                const monthTo = addDays(addMonthsAnchored(c.startDate, i + 1), -1);");
-        changes++;
-    }
+        // Initialize Firebase
+        function initFirebase() {
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                database = firebase.database();
+                controlRef = database.ref('control/data_sharing_on');
 
-    const regexLotNew = /for\s*\(\s*let\s+i\s*=\s*0;\s*i\s*<\s*count;\s*i\+\+\s*\)\s*\{\s*const\s+monthTo\s*=\s*addDays\(addMonths\(monthFrom,\s*1\),\s*-1\);\s*const\s+chequeDate\s*=\s*\(i\s*===\s*0\s*&&\s*firstDate\)/g;
-    if (regexLotNew.test(code)) {
-        code = code.replace(regexLotNew, "let startIdx = (monthFrom.getFullYear() - c.startDate.getFullYear()) * 12 + (monthFrom.getMonth() - c.startDate.getMonth());\n    if (startIdx < 0) startIdx = 0;\n    for (let i = 0; i < count; i++) {\n        const monthTo = addDays(addMonthsAnchored(c.startDate, startIdx + i + 1), -1);\n        const chequeDate = (i === 0 && firstDate)");
-        changes++;
-    }
+                // Firebase se current value sunenge
+                controlRef.on('value', (snapshot) => {
+                    const isOn = snapshot.val() === true;
+                    updateUI(isOn);
+                    toggle.disabled = false; // Enable toggle once connected
+                }, (error) => {
+                    console.error("Firebase Error:", error);
+                    statusBox.className = 'status-box off';
+                    statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>Connection Error. Check Database Rules.</span>';
+                });
 
-    const regexLotUpdate = /for\s*\(\s*let\s+i\s*=\s*oldCount;\s*i\s*<\s*count;\s*i\+\+\s*\)\s*\{\s*const\s+monthTo\s*=\s*addDays\(addMonths\(monthFrom,\s*1\),\s*-1\);/g;
-    if (regexLotUpdate.test(code)) {
-        code = code.replace(regexLotUpdate, "for (let i = oldCount; i < count; i++) {\n            const monthTo = addDays(addMonthsAnchored(c.startDate, i + 1), -1);");
-        changes++;
-    }
-
-    // 2. Export Password
-    const regexExport = /function runExport\(withFormula\)\s*\{\s*if\s*\(!_expKind\)\s*return;\s*closeExportModal\(\);/;
-    if (regexExport.test(code)) {
-        code = code.replace(regexExport, `function runExport(withFormula) {\n    if (!_expKind) return;\n\n    const pwd = prompt('Enter Admin Password to proceed with export:');\n    if (pwd !== 'Abhi@1998#') {\n        if (pwd !== null) { showToast('Invalid Admin Password! Access Denied.', true); }\n        return;\n    }\n\n    closeExportModal();`);
-        changes++;
-    }
-
-    // 3. Mobile Data Sharing Strict Lock (CSS)
-    const regexCSS = /body\.data-sharing-off\s*\{\s*padding-top:\s*80px;\s*\}/g;
-    if (regexCSS.test(code)) {
-        code = code.replace(regexCSS, `body.data-sharing-off { padding-top: 80px; overflow: hidden; }\nbody.data-sharing-off > .brand-bar, body.data-sharing-off > header.app-header, body.data-sharing-off > nav.tabs, body.data-sharing-off > .view, body.data-sharing-off > .form-actions { display: none !important; }`);
-        changes++;
-    }
-
-    // 4. Mobile Data Sharing Strict Lock (JS Default State)
-    const regexInitSharing = /function initDataSharingControl\(\)\s*\{[\s\S]*?applyDataSharingState\(isDataSharingOn\);\s*\}\);\s*\}/;
-    if (regexInitSharing.test(code)) {
-        const newInitSharing = `function initDataSharingControl() {
-        // Force LOCK initially before Firebase connects
-        applyDataSharingState(false);
-
-        if (!usingFirebase || !database) {
-            console.warn('Firebase not connected. Data Sharing Locked.');
-            return;
+            } catch (err) {
+                console.error("Init Error:", err);
+                statusBox.className = 'status-box off';
+                statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span>Firebase Init Failed</span>';
+            }
         }
 
-        const controlRef = database.ref('control/data_sharing_on');
-        controlRef.on('value', (snapshot) => {
-            const val = snapshot.val();
-            isDataSharingOn = (val === true);
-            console.log('Data Sharing Status:', isDataSharingOn ? 'ON' : 'OFF');
-            applyDataSharingState(isDataSharingOn);
-        }, (error) => {
-            console.error('Error listening to control node:', error);
-            applyDataSharingState(false); // Keep locked on error
+        // UI Update Logic
+        function updateUI(isOn) {
+            if (isOn) {
+                toggle.checked = true;
+                labelStatus.textContent = 'ON';
+                labelStatus.className = 'switch-label on';
+                statusBox.className = 'status-box on';
+                statusBox.innerHTML = '<i class="fa-solid fa-lock-open"></i> <span>Data is Visible to Everyone</span>';
+                headerIcon.style.background = 'var(--green-bg)';
+                headerIcon.style.color = 'var(--green)';
+                headerIcon.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+            } else {
+                toggle.checked = false;
+                labelStatus.textContent = 'OFF';
+                labelStatus.className = 'switch-label off';
+                statusBox.className = 'status-box off';
+                statusBox.innerHTML = '<i class="fa-solid fa-lock"></i> <span>God</span>';
+                headerIcon.style.background = 'var(--red-bg)';
+                headerIcon.style.color = 'var(--red)';
+                headerIcon.innerHTML = '<i class="fa-solid fa-lock"></i>';
+            }
+        }
+
+        // Toggle Event Listener
+        toggle.addEventListener('change', function() {
+            if (!controlRef) return;
+            
+            const newValue = this.checked;
+            
+            // Disable temporarily to prevent spam clicks
+            toggle.disabled = true;
+            statusBox.className = 'status-box loading';
+            statusBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Updating...</span>';
+
+            // Firebase me nayi value set karein
+            controlRef.set(newValue)
+                .then(() => {
+                    // UI will auto-update via the 'on' listener
+                    toggle.disabled = false;
+                })
+                .catch((error) => {
+                    console.error("Write Error:", error);
+                    alert("Failed to update status. Check internet or database rules.");
+                    toggle.checked = !newValue; // Revert UI
+                    toggle.disabled = false;
+                });
         });
-    }`;
-        code = code.replace(regexInitSharing, newInitSharing);
-        changes++;
-    }
 
-    const regexApplySharing = /function applyDataSharingState\(isOn\)\s*\{[\s\S]*?bannerEl\.classList\.add\('off'\);\s*\}\s*\}/;
-    if (regexApplySharing.test(code)) {
-        const newApplySharing = `function applyDataSharingState(isOn) {
-        const tabs = document.querySelector('nav.tabs');
-        const views = document.querySelectorAll('.view');
-        const headerActions = document.querySelector('.header-actions');
-        const brandBar = document.querySelector('.brand-bar');
-        let banner = document.getElementById('dataSharingBanner');
-
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'dataSharingBanner';
-            document.body.appendChild(banner);
-        }
-
-        if (isOn) {
-            document.body.classList.remove('data-sharing-off');
-            document.body.style.overflow = ''; 
-            if (tabs) tabs.style.display = 'flex';
-            if (headerActions) headerActions.style.display = 'flex';
-            if (brandBar) brandBar.style.display = 'flex';
-            views.forEach(v => {
-                v.style.display = ''; 
-                if (v.classList.contains('active')) v.style.display = 'block';
-            });
-            banner.classList.remove('off');
-            banner.style.display = 'none';
-        } else {
-            document.body.classList.add('data-sharing-off');
-            document.body.style.overflow = 'hidden'; 
-            if (tabs) tabs.style.display = 'none';
-            if (headerActions) headerActions.style.display = 'none';
-            if (brandBar) brandBar.style.display = 'none';
-            views.forEach(v => v.style.display = 'none');
-            banner.innerHTML = '<i class="fa-solid fa-lock"></i> Welcome';
-            banner.classList.add('off');
-            banner.style.display = 'block';
-        }
-    }`;
-        code = code.replace(regexApplySharing, newApplySharing);
-        changes++;
-    }
-
-    document.getElementById('newCode').value = code;
-    
-    if (changes > 0) {
-        document.getElementById('successMsg').style.display = 'block';
-        setTimeout(() => { document.getElementById('successMsg').style.display = 'none'; }, 5000);
-    } else {
-        alert("Warning: No matching code found. Please make sure you pasted the correct original HTML file.");
-    }
-}
-</script>
-
+        // Start
+        initFirebase();
+    </script>
 </body>
 </html>
