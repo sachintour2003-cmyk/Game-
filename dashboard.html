@@ -3751,36 +3751,27 @@ function initDataSharingControl() {
         console.error('Error listening to control node:', error);
     });
 }
-
 function applyDataSharingState(isOn) {
-    const tabs = document.querySelector('nav.tabs');
-    const views = document.querySelectorAll('.view');
-    const headerActions = document.querySelector('.header-actions');
+    // Mobile ya PC check karo
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const preview = /preview=1/.test(location.search);
+
+    // AGAR PC HAI AUR DATA SHARING OFF HAI -> SEEDHA 404 PAGE PAR BHEJ DO
+    if (!isMobile && !isOn && !preview) {
+        window.location.replace('404.html');
+        return; // Yaha se aage ka purana code nahi chalega (Welcome banner nahi aayega)
+    }
+
+    // Agar Mobile hai YA Data ON hai -> Loading Screen hatao aur Dashboard dikhao
+    const splash = document.getElementById('loadingSplash');
+    if (splash) splash.style.display = 'none';
+
+    // Purane banner ko hide karo (agar load ho gaya ho toh)
     const banner = document.getElementById('dataSharingBanner');
-
-    if (!banner) {
-        const newBanner = document.createElement('div');
-        newBanner.id = 'dataSharingBanner';
-        document.body.appendChild(newBanner);
-    }
-
-    if (isOn) {
-        document.body.classList.remove('data-sharing-off');
-        if (tabs) tabs.style.display = 'flex';
-        views.forEach(v => v.style.display = ''); 
-        if (headerActions) headerActions.style.display = 'flex';
-        const activeView = document.querySelector('.view.active');
-        if (activeView) activeView.style.display = 'block';
-        document.getElementById('dataSharingBanner').classList.remove('off');
-    } else {
-        document.body.classList.add('data-sharing-off');
-        if (tabs) tabs.style.display = 'none';
-        views.forEach(v => v.style.display = 'none');
-        if (headerActions) headerActions.style.display = 'none';
-        const bannerEl = document.getElementById('dataSharingBanner');
-        bannerEl.innerHTML = '<i class="fa-solid fa-lock"></i> Welcome';
-        bannerEl.classList.add('off');
-    }
+    if (banner) banner.style.display = 'none';
+    
+    document.body.classList.remove('data-sharing-off');
+    document.body.style.paddingTop = '0'; // Welcome banner ki jagah hatane ke liye
 }
 // ============ END DATA SHARING CONTROL ============
 
