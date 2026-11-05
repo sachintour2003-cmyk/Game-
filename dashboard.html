@@ -5,6 +5,21 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>AR Tool</title>
+<script src="js/config.js"></script>
+<script>
+(function(){
+  try {
+    var raw = sessionStorage.getItem(window.APP_CONFIG.session.key);
+    if(!raw){ location.replace('admin-login.html'); return; }
+    var s = JSON.parse(raw);
+    if(!s || !s.token || Date.now() > s.expiry){
+      sessionStorage.removeItem(window.APP_CONFIG.session.key);
+      location.replace('admin-login.html'); return;
+    }
+  } catch(e){ location.replace('admin-login.html'); return; }
+})();
+</script>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
@@ -299,10 +314,21 @@ body.data-sharing-off > header.app-header,
 body.data-sharing-off > nav.tabs, 
 body.data-sharing-off > .view, 
 body.data-sharing-off > .form-actions { display: none !important; }
+body.data-sharing-off > .brand-bar, 
+body.data-sharing-off > header.app-header, 
+body.data-sharing-off > nav.tabs, 
+body.data-sharing-off > .view, 
+body.data-sharing-off > .form-actions { display: none !important; }
 
 </style>
 </head>
 <body>
+<!-- LOADING SPLASH SCREEN -->
+<div id="loadingSplash" style="position:fixed;inset:0;background:#0B1B33;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:'Segoe UI',sans-serif;">
+  <i class="fa-solid fa-circle-notch fa-spin" style="font-size:40px;color:#c9a84c;margin-bottom:20px;"></i>
+  <h2>Checking Access...</h2>
+</div>
+
 <div class="brand-bar">
 <div class="brand-mark"><img src="logo.png" class="brand-logo" alt="Logo" onerror="this.remove()"><i class="fa-solid fa-chart-line"></i></div>
 <div class="brand-copy">
@@ -3412,14 +3438,12 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document
 function closeExportModal() { document.getElementById('exportModal').classList.remove('show'); }
 function runExport(withFormula) {
     if (!_expKind) return;
-    
+
     // Admin Password Prompt
-    const pwd = prompt('Enter Admin Password to Factory Reset :');
-    if (pwd !== 'Abhi@1998#') {
-        if (pwd !== null) { // Agar user ne Cancel nahi dabaya
-            showToast('Invalid Admin Password! Access Denied.', true);
-        }
-        return; // Password galat hone par export nahi hoga
+    const pwd = prompt('Enter Admin Password to proceed with export:');
+    if (pwd !== 'admin123') {
+        if (pwd !== null) { showToast('Invalid Admin Password! Access Denied.', true); }
+        return;
     }
 
     closeExportModal();
@@ -3760,42 +3784,35 @@ function initDataSharingControl() {
     }
 
 function applyDataSharingState(isOn) {
-        const tabs = document.querySelector('nav.tabs');
-        const views = document.querySelectorAll('.view');
-        const headerActions = document.querySelector('.header-actions');
-        const brandBar = document.querySelector('.brand-bar');
-        let banner = document.getElementById('dataSharingBanner');
-        
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'dataSharingBanner';
-            document.body.appendChild(banner);
-        }
-        
-        if (isOn) {
-            document.body.classList.remove('data-sharing-off');
-            document.body.style.overflow = ''; 
-            if (tabs) tabs.style.display = 'flex';
-            if (headerActions) headerActions.style.display = 'flex';
-            if (brandBar) brandBar.style.display = 'flex';
-            views.forEach(v => {
-                v.style.display = ''; 
-                if (v.classList.contains('active')) v.style.display = 'block';
-            });
-            banner.classList.remove('off');
-            banner.style.display = 'none';
-        } else {
-            document.body.classList.add('data-sharing-off');
-            document.body.style.overflow = 'hidden'; 
-            if (tabs) tabs.style.display = 'none';
-            if (headerActions) headerActions.style.display = 'none';
-            if (brandBar) brandBar.style.display = 'none';
-            views.forEach(v => v.style.display = 'none');
-            banner.innerHTML = '<i class="fa-solid fa-lock"></i> Welcome';
-            banner.classList.add('off');
-            banner.style.display = 'block';
-        }
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const preview = /preview=1/.test(location.search);
+
+    // PC par 404 error agar Toggle OFF hai
+    if (!isMobile && !isOn && !preview) {
+        window.location.replace('404.html');
+        return; 
     }
+
+    // Website dikhao
+    const splash = document.getElementById('loadingSplash');
+    if (splash) splash.style.display = 'none';
+
+    const tabs = document.querySelector('nav.tabs');
+    const views = document.querySelectorAll('.view');
+    const headerActions = document.querySelector('.header-actions');
+    const banner = document.getElementById('dataSharingBanner');
+
+    if (banner) banner.style.display = 'none';
+    document.body.classList.remove('data-sharing-off');
+    document.body.style.overflow = ''; 
+
+    if (tabs) tabs.style.display = 'flex';
+    views.forEach(v => v.style.display = ''); 
+    if (headerActions) headerActions.style.display = 'flex';
+    
+    const activeView = document.querySelector('.view.active');
+    if (activeView) activeView.style.display = 'block';
+}
 // ============ END DATA SHARING CONTROL ============
 
 function init() { 
