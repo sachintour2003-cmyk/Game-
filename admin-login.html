@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — Secure Access</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root { --ink:#0a1e3d; --gold:#c9a84c; --green:#1f8a55; --green-bg:#e4f5ec; --red:#c1432f; --red-bg:#fbe9e6; --paper:#f3f5f8; --card:#fff; --line:#e1e5ec; --text:#18233a; --text-mute:#5b6b85; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:linear-gradient(135deg,#0a1e3d 0%,#16305a 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .login-card { background:var(--card); border-radius:24px; box-shadow:0 20px 50px rgba(0,0,0,.3); padding:40px 30px; width:100%; max-width:420px; text-align:center; position:relative; overflow:hidden; }
+  .login-card::before { content:''; position:absolute; top:0; left:0; right:0; height:6px; background:var(--gold); }
+  .lock-icon { width:80px; height:80px; background:var(--paper); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:36px; color:var(--ink); }
+  h1 { font-size:22px; color:var(--ink); margin-bottom:8px; }
+  .subtitle { font-size:13.5px; color:var(--text-mute); margin-bottom:28px; line-height:1.5; }
+  .field { margin-bottom:16px; text-align:left; }
+  .field label { display:block; font-size:12px; font-weight:600; color:var(--text-mute); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+  .field input { width:100%; padding:13px 14px; border:1px solid var(--line); border-radius:10px; font-size:15px; font-family:inherit; background:var(--paper); color:var(--text); transition:border-color .15s,box-shadow .15s,background .15s; }
+  .field input:focus { outline:0; border-color:var(--gold); background:#fff; box-shadow:0 0 0 4px rgba(201,168,76,.15); }
+  .btn-login { width:100%; padding:14px; background:var(--ink); color:#fff; border:0; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; margin-top:6px; letter-spacing:.03em; transition:background .15s,transform .1s; }
+  .btn-login:hover { background:#16305a; } .btn-login:active { transform:scale(.99); } .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+  .status { padding:12px; border-radius:10px; font-size:13px; font-weight:600; margin-top:16px; display:none; align-items:center; justify-content:center; gap:8px; }
+  .status.error { display:flex; background:var(--red-bg); color:var(--red); border:1px solid var(--red); }
+  .status.success { display:flex; background:var(--green-bg); color:var(--green); border:1px solid var(--green); }
+  .status.loading { display:flex; background:var(--paper); color:var(--text-mute); border:1px solid var(--line); }
+  .footer-note { font-size:11px; color:var(--text-mute); margin-top:20px; padding-top:20px; border-top:1px dashed var(--line); line-height:1.5; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+  .shake { animation:shake .4s ease; }
+</style>
+</head>
+<body>
+  <div class="login-card" id="loginCard">
+    <div class="lock-icon"><i class="fa-solid fa-shield-halved"></i></div>
+    <h1>Administrative Access</h1>
+    <p class="subtitle">Enter your credentials to unlock the dashboard</p>
+    <form id="loginForm" autocomplete="off">
+      <div class="field"><label for="username">Admin ID</label><input type="text" id="username" placeholder="Enter admin ID" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label><input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required></div>
+      <button type="submit" class="btn-login" id="loginBtn">Unlock Dashboard</button>
+    </form>
+    <div class="status" id="statusMsg"></div>
+    <p class="footer-note"><i class="fa-solid fa-circle-info"></i> Authorized personnel only. All access is logged.</p>
+  </div>
+  <script src="js/config.js"></script>
+  <script>
+  (function(){
+    var form = document.getElementById('loginForm');
+    var btn = document.getElementById('loginBtn');
+    var status = document.getElementById('statusMsg');
+    var card = document.getElementById('loginCard');
+    var userIn = document.getElementById('username');
+    var passIn = document.getElementById('password');
+
+    async function sha256(str){
+      var buf = new TextEncoder().encode(str);
+      var hash = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+    function setStatus(type, html){ status.className = 'status ' + type; status.innerHTML = html; }
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      var user = userIn.value.trim();
+      var pass = passIn.value;
+      if(!user || !pass){ setStatus('error','<i class="fa-solid fa-triangle-exclamation"></i> Please fill both fields'); return; }
+      btn.disabled = true;
+      setStatus('loading','<i class="fa-solid fa-spinner fa-spin"></i> Verifying credentials...');
+      try {
+        var hash = await sha256(pass);
+        var cfg = window.APP_CONFIG;
+        await new Promise(r => setTimeout(r, 500));
+        if(user.toLowerCase() !== cfg.admin.username.toLowerCase() || hash !== cfg.admin.passwordHash){
+          setStatus('error','<i class="fa-solid fa-lock"></i> Access Denied — Invalid credentials');
+          card.classList.add('shake');
+          setTimeout(() => card.classList.remove('shake'), 500);
+          btn.disabled = false; passIn.value = ''; passIn.focus();
+          return;
+        }
+        var session = {
+          token: Math.random().toString(36).slice(2) + Date.now().toString(36),
+          user: user,
+          expiry: Date.now() + cfg.session.ttlMs
+        };
+        sessionStorage.setItem(cfg.session.key, JSON.stringify(session));
+        setStatus('success','<i class="fa-solid fa-check"></i> Access Granted — Redirecting...');
+        setTimeout(() => location.replace('dashboard.html'), 600);
+      } catch(err){
+        console.error(err);
+        setStatus('error','<i class="fa-solid fa-triangle-exclamation"></i> System error. Try again.');
+        btn.disabled = false;
+      }
+    });
+    userIn.focus();
+  })();
+  </script>
+</body>
+</html>
