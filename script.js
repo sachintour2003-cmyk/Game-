@@ -3100,86 +3100,33 @@ setTimeout(patchV2Init, 0);
 let isDataSharingOn = false;
 
 function initDataSharingControl() {
+    // Jab tak Firebase se jawab na aaye, page chhupa rahega (default LOCKED)
+    document.body.style.visibility = 'hidden';
+
+    let answered = false;
+    const show = (isOn) => {
+        answered = true;
+        applyDataSharingState(isOn);
+        document.body.style.visibility = '';
+    };
+
+    // Firebase connect nahi hua -> locked
     if (!usingFirebase || !database) {
-        console.warn('Firebase not connected.');
-        applyDataSharingState(true); 
+        show(false);
         return;
     }
+
+    // 8 second me jawab na aaye -> locked
+    setTimeout(() => { if (!answered) show(false); }, 8000);
+
     const controlRef = database.ref('control/data_sharing_on');
     controlRef.on('value', (snapshot) => {
-        const val = snapshot.val();
-        isDataSharingOn = (val === true);
-        applyDataSharingState(isDataSharingOn);
+        isDataSharingOn = (snapshot.val() === true); // sirf true hone par ON
+        show(isDataSharingOn);
     }, (error) => {
         console.error('Error listening to control node:', error);
-        applyDataSharingState(true); 
+        show(false); // error par bhi locked
     });
-}
-
-function applyDataSharingState(isOn) {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const preview = /preview=1/.test(location.search);
-
-    // AGAR TOGGLE OFF HAI
-    if (!isOn && !preview) {
-        // PC par 404 par bhej do
-        if (!isMobile) {
-            window.location.replace('404.html');
-            return;
-        }
-        
-        // Mobile par data lock karo
-        const splash = document.getElementById('loadingSplash');
-        if (splash) splash.style.display = 'none';
-        
-        document.body.classList.add('data-sharing-off');
-        document.body.style.overflow = 'hidden'; 
-        
-        const tabs = document.querySelector('nav.tabs');
-        const views = document.querySelectorAll('.view');
-        const headerActions = document.querySelector('.header-actions');
-        const brandBar = document.querySelector('.brand-bar');
-        
-        if (tabs) tabs.style.display = 'none';
-        if (headerActions) headerActions.style.display = 'none';
-        if (brandBar) brandBar.style.display = 'none';
-        views.forEach(v => v.style.display = 'none');
-        
-        let banner = document.getElementById('dataSharingBanner');
-        if (!banner) {
-            banner = document.createElement('div');
-            banner.id = 'dataSharingBanner';
-            document.body.appendChild(banner);
-        }
-        banner.innerHTML = '<i class="fa-solid fa-lock"></i> Data Locked by Admin';
-        banner.classList.add('off');
-        banner.style.display = 'block';
-        return;
-    }
-
-    // AGAR TOGGLE ON HAI
-    const splash = document.getElementById('loadingSplash');
-    if (splash) splash.style.display = 'none';
-
-    document.body.classList.remove('data-sharing-off');
-    document.body.style.overflow = ''; 
-
-    const tabs = document.querySelector('nav.tabs');
-    const views = document.querySelectorAll('.view');
-    const headerActions = document.querySelector('.header-actions');
-    const brandBar = document.querySelector('.brand-bar');
-
-    if (tabs) tabs.style.display = 'flex';
-    if (headerActions) headerActions.style.display = 'flex';
-    if (brandBar) brandBar.style.display = 'flex';
-    
-    views.forEach(v => {
-        v.style.display = ''; 
-        if (v.classList.contains('active')) v.style.display = 'block';
-    });
-
-    const banner = document.getElementById('dataSharingBanner');
-    if (banner) banner.style.display = 'none';
 }
 // ============ END DATA SHARING CONTROL ============
 
